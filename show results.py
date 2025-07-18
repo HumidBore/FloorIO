@@ -9,10 +9,11 @@ TILE_H = 10
 
 # ==== Inserisci qui l'output copincollato (puoi leggere da file se preferisci) ====
 output = """
-Pezzo 1: (3,7)  10x6  MADRE 1, angolo 1
-Pezzo 2: (0,7)  3x6  MADRE 2, angolo 1, ROT
-Pezzo 3: (10,0)  3x7  MADRE 1, angolo 3, ROT
-Pezzo 4: (0,0)  10x7  MADRE 2, angolo 3
+Pezzo 1: (4,0)  9x3  MADRE 1, angolo 3
+Pezzo 2: (6,3)  7x10  MADRE 1, angolo 1, ROT
+Pezzo 3: (0,3)  6x10  MADRE 2, angolo 1
+Pezzo 4: (2,0)  2x3  MADRE 2, angolo 4
+Pezzo 5: (0,0)  2x3  MADRE 2, angolo 2
 """  # <<-- Qui copia la tua soluzione MiniZinc
 
 # ==== PARSING OUTPUT ====

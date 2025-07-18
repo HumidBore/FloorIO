@@ -13,8 +13,8 @@ set of int: MOTHERS = 1..MAX_MOTHERS;
 set of int: ANGOLI = 1..4;  % 1=BL, 2=BR, 3=TL, 4=TR
 
 % ----------- VARIABILI PRINCIPALI -----------
-array[PIECE] of var 0..ROOM_W: x;           % inizio X pezzo posato
-array[PIECE] of var 0..ROOM_H: y;           % inizio Y pezzo posato
+array[PIECE] of var 0..ROOM_W-MIN_PIECE: x;           % inizio X pezzo posato
+array[PIECE] of var 0..ROOM_H-MIN_PIECE: y;           % inizio Y pezzo posato
 array[PIECE] of var MIN_PIECE..TILE_W: w;   % larghezza "nominale" del pezzo
 array[PIECE] of var MIN_PIECE..TILE_H: h;   % altezza "nominale" del pezzo
 array[PIECE] of var bool: used;             % true se pezzo posato
@@ -37,11 +37,26 @@ constraint forall(i in PIECE)(
   used[i] -> x[i]+w[i] <= ROOM_W /\ y[i]+h[i] <= ROOM_H
 );
 
+constraint forall(i in PIECE)(
+  x[i] <= ROOM_W - w[i] /\ y[i] <= ROOM_H - h[i]
+);
+
+% =================================
+% pezzi che si toccano lateralmente devono avere la stessa altezza
+constraint forall(i, j in PIECE where i < j)(
+  (used[i] /\ used[j] /\ x[i] + w[i] = x[j]) -> (y[i] = y[j] /\ h[i] = h[j])
+);
+
+
+
+% =================================
+
 % Evita pezzi inutili: se un pezzo non è usato, i suoi dati sono nulli
 constraint forall(i in PIECE)(
   not used[i] -> (w[i] = MIN_PIECE /\ h[i] = MIN_PIECE /\ madre[i]=0 /\ angolo[i]=0 /\ not ruotato[i])
 );
 
+% =================================
 
 % 2. Nessuna sovrapposizione tra pezzi posati
 constraint forall(i, j in PIECE where i < j)(
@@ -50,6 +65,7 @@ constraint forall(i, j in PIECE where i < j)(
     y[i] + h[i] <= y[j] \/ y[j] + h[j] <= y[i]
 );
 
+% =================================
 
 % 3. Vincolo: copertura completa della stanza (grezzo, ogni cella almeno 1 pezzo la copre)
 constraint
@@ -61,10 +77,16 @@ constraint
     )
   );
 
+
+% =================================
+
+
 % 4. Pezzo intero: dimensioni esatte e no madre
 constraint forall(i in PIECE)(
   intero[i] <-> (w[i]=TILE_W /\ h[i]=TILE_H /\ madre[i]=0 /\ angolo[i]=0 /\ not ruotato[i])
 );
+
+% =================================
 
 % 5. Pezzo tagliato: madre >0 e occupa uno degli angoli della madre
 constraint forall(i in PIECE)(
@@ -83,6 +105,8 @@ constraint forall(i in PIECE)(
   )
 );
 
+% =================================
+
 % 6. Ogni madre ha massimo 4 figli, in angoli diversi
 constraint forall(j in MOTHERS)(
   sum(i in PIECE)(used[i] /\ madre[i]=j) <= 4 /\
@@ -90,6 +114,8 @@ constraint forall(j in MOTHERS)(
     sum(i in PIECE)(used[i] /\ madre[i]=j /\ angolo[i]=a) <= 1
   )
 );
+
+% =================================
 
 % 7. CONSTRAINT NON SOVRAPPOSIZIONE INTERNA ALLA MADRE
 % Per ogni coppia di figli della stessa madre con angolo diverso:
@@ -107,6 +133,8 @@ constraint forall(i, j in PIECE where i < j)(
       )
 );
 
+% =================================
+
 % 8. Associazione: se una madre è usata almeno una volta, deve essere "acquistata"
 constraint forall(j in MOTHERS)(
   madre_usata[j] <-> (exists(i in PIECE)(used[i] /\ madre[i]=j) \/
@@ -119,10 +147,14 @@ constraint forall(i in PIECE)(
     (x[i]=0 \/ x[i]+w[i]=ROOM_W \/ y[i]=0 \/ y[i]+h[i]=ROOM_H)
 );
 
+% =================================
+
 % 10. Pezzi completamente interni DEVONO essere interi
 constraint forall(i in PIECE)(
   used[i] /\ x[i]>0 /\ x[i]+w[i]<ROOM_W /\ y[i]>0 /\ y[i]+h[i]<ROOM_H -> intero[i]
 );
+
+% =================================
 
 % 11. Distanza minima tra giunti orizzontali e verticali tra pezzi adiacenti
 constraint forall(i,j in PIECE where i < j)(
@@ -131,6 +163,8 @@ constraint forall(i,j in PIECE where i < j)(
   ->
     (abs(y[i]-y[j]) >= GIUNTO /\ abs(x[i]-x[j]) >= GIUNTO)
 );
+
+% =================================
 
 % SIMMETRY BREAKING
 
@@ -153,6 +187,9 @@ var int: tot_madri = sum(j in MOTHERS)(madre_usata[j]);
 var int: tot_intere = sum(j in PIECE)(intero[j]);
 var int: tot_usate = tot_madri + tot_intere;
 solve minimize tot_usate;
+
+
+
 
 % ----------- OUTPUT -----------
 output [
