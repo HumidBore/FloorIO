@@ -1,3 +1,4 @@
+% Questo script ottimizza i tagli partendo dai pezzi da produrre
 int: n;
 int: PW;
 int: PH;
