@@ -37,12 +37,19 @@ constraint forall(i in PIECE)(
   used[i] -> x[i]+w[i] <= ROOM_W /\ y[i]+h[i] <= ROOM_H
 );
 
-% 2. Nessuna sovrapposizione tra pezzi posati
-constraint forall(i,j in PIECE where i < j)(
-  used[i] /\ used[j] ->
-    x[i]+w[i] <= x[j] \/ x[j]+w[j] <= x[i] \/
-    y[i]+h[i] <= y[j] \/ y[j]+h[j] <= y[i]
+% Evita pezzi inutili: se un pezzo non è usato, i suoi dati sono nulli
+constraint forall(i in PIECE)(
+  not used[i] -> (w[i] = MIN_PIECE /\ h[i] = MIN_PIECE /\ madre[i]=0 /\ angolo[i]=0 /\ not ruotato[i])
 );
+
+
+% 2. Nessuna sovrapposizione tra pezzi posati
+constraint forall(i, j in PIECE where i < j)(
+    (not used[i] \/ not used[j]) \/
+    x[i] + w[i] <= x[j] \/ x[j] + w[j] <= x[i] \/
+    y[i] + h[i] <= y[j] \/ y[j] + h[j] <= y[i]
+);
+
 
 % 3. Vincolo: copertura completa della stanza (grezzo, ogni cella almeno 1 pezzo la copre)
 constraint
@@ -124,6 +131,22 @@ constraint forall(i,j in PIECE where i < j)(
   ->
     (abs(y[i]-y[j]) >= GIUNTO /\ abs(x[i]-x[j]) >= GIUNTO)
 );
+
+% SIMMETRY BREAKING
+
+% Ordinamento dei pezzi posati
+constraint forall(i in 1..MAX_PIECES-1)(
+  used[i] >= used[i+1]
+);
+
+% Ordinamento delle madri
+constraint forall(i in 2..MAX_PIECES)(
+  madre[i-1] <= madre[i]
+);
+constraint forall(j in 1..MAX_MOTHERS-1)(
+  madre_usata[j] >= madre_usata[j+1]
+);
+
 
 % ----------- OBIETTIVO -----------
 var int: tot_madri = sum(j in MOTHERS)(madre_usata[j]);
